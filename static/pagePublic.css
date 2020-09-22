@@ -1,0 +1,84 @@
+﻿ /*修改默认element ui*/
+   .el-form-item__label, .el-table
+    {
+        font-size: 13px !important;
+    }
+
+    .el-icon-search, .el-icon-download,el-icon-close-notification
+    {
+        font-size: 16px;
+    }
+	 .el-icon-delete, .el-icon-edit
+    {
+        font-size: 14px;
+    }
+	.el-form-item
+	{
+		margin-bottom:3px!important;
+	}
+	.el-pager li
+	{
+			font-size:17px !important;
+	}
+	.el-pager li.active ,.el-pager li:hover
+	{
+		color:#67C23A !important;
+		
+	}
+   
+	/** 表单固定款*/
+    .el-date-editor.el-input,.el-input,.el-select
+    {
+        width:200px;
+        
+    }
+	.el-input-number--mini
+	{
+		width:inherit !important;
+	}
+	 .rightDiv
+    {
+        display:flex;
+        justify-content:flex-end
+    }
+    .leftDiv
+    {
+        display:flex;
+        justify-content:flex-start;
+        margin:10px 0 0 20px;
+    }
+
+	/*自定义css*/
+    body {
+        background:#eee !important;
+    }
+    .title
+    {
+        font-size: 18px;
+        line-height: 35px;
+        color: #555;
+		height:35px ;
+    }
+	.title i
+		{
+			 font-size: 18px;
+		}
+	p.info
+	{
+		font-size:16px;
+		color:#67C23A;
+		margin:5px;
+		text-align:left;
+
+	}
+	#card
+	{
+		position:relative;
+	}
+	.page
+	{
+		position:absolute;
+		right:20px;
+		bottom:20px;
+	
+		}
