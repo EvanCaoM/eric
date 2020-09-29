@@ -16,11 +16,16 @@ Vue.use(Router)
 
 const router = new Router({
   routes: [
-    ...mainpo,
+    // ...mainpo,
     {
       path: '/mainpo',
       name: 'mainpo',
       component: () => import('@/views/item/mainpo.vue')
+    },
+    {
+      path: '/zl11',
+      name: 'zl11',
+      component: () => import('@/views/item/zl11.vue')
     }
     // {
     //   path: '/eric',

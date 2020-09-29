@@ -81,7 +81,7 @@
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
-              ></el-option>\
+              ></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="征税方式">
@@ -148,12 +148,7 @@
                 <template slot-scope="scope">
                   <el-button @click="handleDeclitem(scope.row)" type="text" size="small">编辑</el-button>
                 </template>
-              </el-table-column>
-              <!-- <el-table-column label="管制">
-                  <template slot-scope="scope">
-                      <el-checkbox checked="scope.row.RETRC == 'Y'" ></el-checkbox>
-                  </template>
-              </el-table-column>-->
+              </el-table-column>                  
               <el-table-column label="新/旧">
                 <template slot-scope="scope">
                   <el-checkbox :checked="scope.row.STATUS != '1'" @change="statusChange(scope.row)"></el-checkbox>
@@ -556,6 +551,10 @@ export default {
           label: "半年内报废"
         },
         {
+          value: "一年内报废",
+          label: "一年内报废"
+        },
+        {
           value: "半年内退运",
           label: "半年内退运"
         },
@@ -663,8 +662,37 @@ export default {
         })
         .catch(error => console.log(error));
     },
-    deleteData() {},
-    downloadData() {},
+    deleteData() {
+      let dataForm = {
+        data : this.multipleSelection,
+        ip : ipq
+      }
+      deletePo(JSON.stringify(dataForm)).then(res => {
+        if(res.data.status == 1){
+            alert("Delete Error！  " + res.data.msg)
+          }else{
+            alert("Delete Successfully!");
+          }
+      })
+      .catch(error => console.log(error));
+    },
+    downloadData() {
+          //excel数据导出
+         require.ensure([], () => {
+           const {
+             export_json_to_excel
+           } = require('../../assets/js/Export2Excel');
+           const tHeader = ['序号','姓名', '用户名', '性别'];
+           const filterVal = ['BUKRS','EBELN', 'EBELP', 'DECLITEM'];
+           const list = this.pageData;
+           const data = this.formatJson(filterVal, list);
+           export_json_to_excel(tHeader, data, '用户列表');
+         })
+       },
+    formatJson(filterVal, jsonData) {
+      return jsonData.map(v => filterVal.map(j => v[j]))
+    },
+
     // 弹出底账序号页面
     editClick(row) {
       this.editDialogFormVisible = true;
@@ -677,13 +705,7 @@ export default {
           x.EBELN == this.declitemRow.EBELN && x.EBELP == this.declitemRow.EBELP
       );
       var reg = /^((54)|(67)|(68))/;
-      if (
-        row.RETRC == "Y" ||
-        (reg.test(dr.EBELN) && dr.vendortype == "放弃退税")
-      ) {
-        // TODO 管制，不知道还要不要，暂时去掉
-      } else {
-      }
+
 
       // 相同po号相同描述的po直接带出
       this.pageData.forEach(samePo => {
@@ -703,6 +725,25 @@ export default {
           ) {
             samePo.BRGEW = row.BRGEW;
           }
+
+          if (
+            row.RETRC == "Y" ||
+            (reg.test(dr.EBELN) && dr.vendortype == "放弃退税")
+          ) {
+            // TODO 管制，不知道还要不要，暂时去掉
+            var ztcurr;
+            if (dr.TCURR != "")
+                ztcurr = parseFloat(dr.TCURR);
+            else
+                ztcurr = 1;
+            var netpr = parseFloat(dr.NETPR);//单价
+            var per = parseFloat(dr.PEINH);//per
+            if (netpr * ztcurr / per >= 100) {
+                samePo.RETRC = "X"
+            }
+          } else {
+            samePo.RETRC = ""
+          }
         }
       });
     },
@@ -714,7 +755,7 @@ export default {
       this.editDialogFormVisible = true;
     },
     getBukrs() {
-      getComcode(this.userIp).then(res => (this.bukrs = res.data));
+      getComcode(ipq).then(res => (this.bukrs = res.data));
     },
     getUserIP(onNewIP) {
       //  onNewIp - your listener function for new IPs
@@ -767,6 +808,7 @@ export default {
     },
     getIp() {
       this.getUserIP(function(ip) {
+        alert(ip)
         ipq = ip;
       });
     },
@@ -776,7 +818,7 @@ export default {
         EBELN: row.EBELN,
         EBELP: row.EBELP
       };
-      getPrePO(data).then(res => {
+      getPrePO(JSON.stringify(data)).then(res => {
         if (res.data.status == 1) {
           alert(res.data.msg);
         } else {
