@@ -8,8 +8,9 @@
       size="mini"
       style="font-size: 10px"
     >
-      <el-form-item label="PO">{{declitemRow.EBELN}}</el-form-item>
-      <el-form-item label="POItem">{{declitemRow.EBELP}}</el-form-item>
+      <el-form-item label="PO" v-if="declitemRow.Type == undefined">{{declitemRow.EBELN}}</el-form-item>
+      <el-form-item label="POItem" v-if="declitemRow.Type == undefined">{{declitemRow.EBELP}}</el-form-item>
+      <el-form-item label="Matnr" v-if="declitemRow.EBELN == undefined">{{declitemRow.MATNR}}</el-form-item>
       <el-form-item label="Declitem">
         <el-input v-model="decl"></el-input>
         <el-button type="primary" icon="el-icon-zoom-in" @click="queryDeclitem"></el-button>
@@ -92,10 +93,17 @@ export default {
   },
   methods: {
     queryDeclitem() {
+      var type;
+      if(this.declitemRow.vendortype == null || this.declitemRow.vendortype == undefined){
+        type = this.declitemRow.Type //料号类型
+      }else{
+        type = this.declitemRow.vendortype //po类型
+      }
       let data = {
         BUKRS: this.declitemRow.BUKRS,
         ACCNO: this.declitemRow.ACCNO,
-        DECLITEM: this.decl
+        DECLITEM: this.decl,
+        TYPE: type  //料号的类型
       };
       queryDecl(JSON.stringify(data))
         .then(res => {

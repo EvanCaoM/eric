@@ -61,10 +61,10 @@
               ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="IsToTWW">
-            <el-select v-model="form.IsToTWW" placeholder="请选择">
+          <el-form-item label="IsToTww">
+            <el-select v-model="form.IsToTww" placeholder="请选择">
               <el-option
-                v-for="item in DFLAG"
+                v-for="item in IsToTww"
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
@@ -111,9 +111,26 @@
           <div class="leftDiv">
             <el-button type="primary" icon="el-icon-search" @click="queryData" size="mini">query</el-button>
             <el-button type="primary" icon="el-icon-check" @click="saveData" size="mini">save</el-button>
-            <el-button type="primary" icon="el-icon-delete" @click="deleteData" size="mini">delete</el-button>
+            <el-popover
+              placement="top"
+              v-model="delPopVisible">
+              <div style="text-align: right; margin: 0">
+                <el-input
+                  type="textarea"
+                  :rows="2"
+                  placeholder="请输入内容"
+                  v-model="delReason">
+                </el-input>
+                <el-button size="mini" type="text" @click="delPopVisible = false">取消</el-button>
+                <el-button type="primary" size="mini" @click="deleteData()">确定</el-button>
+              </div>
+              <el-button type="primary" slot="reference" icon="el-icon-delete" @click="deleteClick" size="mini">delete</el-button>
+
+            </el-popover>
+            
             <el-button type="primary" icon="el-icon-download" @click="downloadData" size="mini">download</el-button>
           </div>
+
         </el-form>
       </div>
       <div>
@@ -195,13 +212,13 @@
                 width="180"
               ></el-table-column>
               <el-table-column label="Download" width="150">
-                <template slot-scope="scope">
-                  <el-button type="text" v-on:click="queryImportPO(scope.row)">Download</el-button>
+                <template>
+                  <el-button type="text" v-on:click="downloadData()">Download</el-button>
                 </template>
               </el-table-column>
               <el-table-column label="Locked" width="150">
                 <template slot-scope="scope">
-                  <el-button type="text" v-on:click="queryImportPO(scope.row)">锁定/解锁</el-button>
+                  <el-button type="text" v-on:click="lockClick(scope.row)">{{scope.row.LOCK}}</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -227,7 +244,6 @@
         :dialogTableVisible="editDialogFormVisible"
         :declitemRow="declitemRow"
       ></declitem>
-      <prepo :prepoVisible="prepoVisible" :prepoData="prepoData"></prepo>
     </el-card>
   </div>
 </template>
@@ -238,15 +254,12 @@
 var ipq = "";
 
 import {
-  queryMainpo,
-  deletePo,
-  savePo,
+  queryZL11,
+  deleteZL11,
+  saveZL11,
   getComcode,
-  getUser,
-  getPrePO,
-  queryPR
-} from "../../api/mainpo";
-import {queryZL11, deletePo as ddd} from "../../api/zl11"
+  lockZL11
+} from "../../api/zl11";
 import declitem from "../../components/declitem";
 import prepo from "../../components/prepo";
 
@@ -263,7 +276,8 @@ export default {
       multipleSelection: [],
       loading: false,
       editDialogFormVisible: false,
-      prepoVisible: false,
+      delPopVisible: false,
+      delReason: "",
       // 原进口po
       prepoData: [],
       // 要归并的行
@@ -278,7 +292,7 @@ export default {
         SMAKTX: "",
         DECLITEM: "",
         DFLAG: "",
-        IsToTWW: "",
+        IsToTww: "",
         MatType: "",
         Type: "",
         DateFrom: "",
@@ -375,7 +389,7 @@ export default {
           label: "ID"
         },
       ],
-
+      // 分页数据
       pageData: [],
       // result数据
       resultData: [],
@@ -392,6 +406,20 @@ export default {
         {
           value: "ALL",
           label: "ALL"
+        }
+      ],
+      IsToTww: [
+        {
+          value: "",
+          label: "ALL"
+        },
+        {
+          value: "是",
+          label: "Y"
+        },
+        {
+          value: "否",
+          label: "N"
         }
       ],
       MatType: [
@@ -574,28 +602,30 @@ export default {
   },
   methods: {
     queryData() {
-      this.userIp = ipq;
-
       this.resultData = [];
       this.pageData = [];
       this.loading = true;
       queryZL11(JSON.stringify(this.form))
         .then(res => {
-          this.resultData = res.data;
-          this.pageData = this.resultData.slice(
-            this.pageSize * this.currentPage - this.pageSize,
-            this.pageSize * this.currentPage
-          );
-          this.total = this.resultData.length;
+          if(res.data.status == 1){
+            alert(res.data.msg)
+          }else{
+            this.resultData = res.data.data;
+            this.pageData = this.resultData.slice(
+              this.pageSize * this.currentPage - this.pageSize,
+              this.pageSize * this.currentPage
+            );
+            this.total = this.resultData.length;
+          }
           this.loading = false;
         })
         .catch(function(error) {
-          alert(error);
           this.loading = false;
+          alert(error);
         });
     },
     saveData() {
-      savePo(this.multipleSelection)
+      saveZL11(this.multipleSelection)
         .then(res => {
           if(res.data.status == 1){
             alert("Save Error！  " + res.data.msg)
@@ -605,19 +635,26 @@ export default {
         })
         .catch(error => console.log(error));
     },
+    deleteClick(){
+      this.delPopVisible = true
+    },
     deleteData() {
       let dataForm = {
         data : this.multipleSelection,
-        ip : ipq
+        delReason : this.delReason
       }
-      deletePo(JSON.stringify(dataForm)).then(res => {
+      deleteZL11(JSON.stringify(dataForm)).then(res => {
         if(res.data.status == 1){
-            alert("Delete Error！  " + res.data.msg)
-          }else{
-            alert("Delete Successfully!");
-          }
+          alert("Delete Error！  " + res.data.msg)
+        }else{
+          alert("Delete Successfully!");
+        }
+        this.delPopVisible = false
       })
-      .catch(error => console.log(error));
+      .catch(error => {
+        this.delPopVisible = false
+        console.log(error)
+        })
     },
     downloadData() {
           //excel数据导出
@@ -635,7 +672,6 @@ export default {
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => v[j]))
     },
-
     // 弹出底账序号页面
     editClick(row) {
       this.editDialogFormVisible = true;
@@ -645,50 +681,26 @@ export default {
       this.editDialogFormVisible = false;
       var dr = this.resultData.find(
         x =>
-          x.EBELN == this.declitemRow.EBELN && x.EBELP == this.declitemRow.EBELP
+          x.BUKRS == this.declitemRow.BUKRS && x.MATNR == this.declitemRow.MATNR
       );
       var reg = /^((54)|(67)|(68))/;
 
+      dr.DECLITEM = row.DECLITEM;
+      dr.MA_MATNR = row.MATNR;
+      dr.CGEWEI = row.CGEWEI;
+      dr.ZGEWEI = row.ZGEWEI;
+      dr.TAX_CODE = row.TAX_CODE;
+      dr.SMAKTX = row.SMAKTX;
 
-      // 相同po号相同描述的po直接带出
-      this.pageData.forEach(samePo => {
-        if (samePo.EBELN == dr.EBELN && samePo.TXZ01 == dr.TXZ01) {
-          samePo.DECLITEM = row.DECLITEM;
-          samePo.MATNR = row.MATNR;
-          samePo.CGEWEI = row.CGEWEI;
-          samePo.ZGEWEI = row.ZGEWEI;
-          samePo.TAX_CODE = row.TAX_CODE;
-          samePo.SMAKTX = row.SMAKTX;
-          this.$refs.multipleTable.toggleRowSelection(samePo, true);
+      this.$refs.multipleTable.toggleRowSelection(dr, true);
 
-          //境外PO
-          if (
-            dr.LIFNR == "QCI_MRO" ||
-            dr.LIFNR.substring(dr.LIFNR.length - 1, dr.LIFNR.length) == "F"
-          ) {
-            samePo.BRGEW = row.BRGEW;
-          }
-
-          if (
-            row.RETRC == "Y" ||
-            (reg.test(dr.EBELN) && dr.vendortype == "放弃退税")
-          ) {
-            // TODO 管制，不知道还要不要，暂时去掉
-            var ztcurr;
-            if (dr.TCURR != "")
-                ztcurr = parseFloat(dr.TCURR);
-            else
-                ztcurr = 1;
-            var netpr = parseFloat(dr.NETPR);//单价
-            var per = parseFloat(dr.PEINH);//per
-            if (netpr * ztcurr / per >= 100) {
-                samePo.RETRC = "X"
-            }
-          } else {
-            samePo.RETRC = ""
-          }
-        }
-      });
+      //境外PO
+      if (
+        dr.LIFNR == "QCI_MRO" ||
+        dr.LIFNR.substring(dr.LIFNR.length - 1, dr.LIFNR.length) == "F"
+      ) {
+        dr.BRGEW = row.BRGEW;
+      }
     },
     dialogHanderHide() {
       this.isShow = false;
@@ -698,99 +710,18 @@ export default {
       this.editDialogFormVisible = true;
     },
     getBukrs() {
-      getComcode(ipq).then(res => (this.bukrs = res.data));
+      getComcode().then(res => (this.bukrs = res.data));
     },
-    getUserIP(onNewIP) {
-      //  onNewIp - your listener function for new IPs
-      //compatibility for firefox and chrome
-      var myPeerConnection =
-        window.RTCPeerConnection ||
-        window.mozRTCPeerConnection ||
-        window.webkitRTCPeerConnection;
-      var pc = new myPeerConnection({
-          iceServers: []
-        }),
-        noop = function() {},
-        localIPs = {},
-        ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/g,
-        key;
-
-      function iterateIP(ip) {
-        if (!localIPs[ip]) onNewIP(ip);
-        localIPs[ip] = true;
-      }
-
-      //create a bogus data channel
-      pc.createDataChannel("");
-
-      // create offer and set local description
-      pc.createOffer()
-        .then(function(sdp) {
-          sdp.sdp.split("\n").forEach(function(line) {
-            if (line.indexOf("candidate") < 0) return;
-            line.match(ipRegex).forEach(iterateIP);
-          });
-
-          pc.setLocalDescription(sdp, noop, noop);
-        })
-        .catch(function(reason) {
-          // An error occurred, so handle the failure to connect
-        });
-
-      //sten for candidate events
-      pc.onicecandidate = function(ice) {
-        if (
-          !ice ||
-          !ice.candidate ||
-          !ice.candidate.candidate ||
-          !ice.candidate.candidate.match(ipRegex)
-        )
-          return;
-        ice.candidate.candidate.match(ipRegex).forEach(iterateIP);
-      };
+    lockClick(row){
+      lockZL11(row).then(res =>{
+        if(res.data.status == 0){
+            row.LOCK = row.LOCK=="Y" ? "N" : "Y"
+          }else{
+            alert(res.data.msg);
+          }
+      }).catch(err => alert(err))
     },
-    getIp() {
-      this.getUserIP(function(ip) {
-        alert(ip)
-        ipq = ip;
-      });
-    },
-    queryImportPO(row) {
-      let data = {
-        BUKRS: row.BUKRS,
-        EBELN: row.EBELN,
-        EBELP: row.EBELP
-      };
-      getPrePO(JSON.stringify(data)).then(res => {
-        if (res.data.status == 1) {
-          alert(res.data.msg);
-        } else {
-          this.prepoVisible = true;
-          this.prepoData = res.data.data;
-        }
-      });
-    },
-    queryPRAttach(row) {
-      let data = {
-        BUKRS: row.BUKRS,
-        EBELN: row.EBELN
-      };
-      queryPR(data)
-        .then(res => {
-          window.open(
-            "http://QCIBPM/bpmportal/Program/GWF063/GWF063_Query.aspx?&QID=" +
-              res.data,
-            "_blank"
-          );
-        })
-        .catch(err => {
-          console.log(err);
-        });
-    },
-    statusChange(row){
-      row.STATUS == "1" ? "0" : "1"
-    },
-
+    
     // 分页操作
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
@@ -821,8 +752,6 @@ export default {
     }
   },
   mounted() {
-    this.getIp();
-    // this.getIp()
     this.getBukrs();
   }
 };

@@ -12,10 +12,9 @@ export const queryZL11 = params => {
         }
     })
 }
-export const deletePo = params => { return axios.post(`${host}/api/mainpo/delete`, params) }
+export const deleteZL11 = params => { return axios.post(`${host}/api/zl11/delete`, params) }
 export const queryDecl = params => { return axios.post(`${host}/api/mainpo/queryDeclitem`, params) }
-export const savePo = params => { return axios.post(`${host}/api/mainpo/save`, params) }
+export const saveZL11 = params => { return axios.post(`${host}/api/zl11/Save`, params) }
 export const getComcode = params => { return axios.post(`${host}/api/mainpo/getComcode`, params) }
-export const getUser = params => { return axios.get(`${host}/api/values`) }
-export const getPrePO = params => { return axios.post(`${host}/api/mainpo/GetPrePO`, params) }
-export const queryPR = params => {return axios.post(`${host}/api/mainpo/queryPR`, params) }
+export const lockZL11 = params => { return axios.post(`${host}/api/zl11/LockClick`, params) }
+

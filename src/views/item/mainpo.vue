@@ -186,7 +186,7 @@
               </el-table-column>
               <el-table-column label="备注">
                 <template slot-scope="scope">
-                  <el-select v-model="scope.row.REMARK">
+                  <el-select v-model="scope.row.REMARK" @change="remarkChange(scope.row)">
                     <el-option
                       v-for="item in remark"
                       :key="item.value"
@@ -665,7 +665,6 @@ export default {
     deleteData() {
       let dataForm = {
         data : this.multipleSelection,
-        ip : ipq
       }
       deletePo(JSON.stringify(dataForm)).then(res => {
         if(res.data.status == 1){
@@ -746,6 +745,18 @@ export default {
           }
         }
       });
+    },
+    remarkChange(row){
+      var dr = this.resultData.find(
+        x =>
+          x.EBELN == this.declitemRow.EBELN && x.EBELP == this.declitemRow.EBELP
+      )
+      // 相同po号相同描述的po直接带出
+      this.pageData.forEach(samePo => {
+        if (samePo.EBELN == dr.EBELN && samePo.TXZ01 == dr.TXZ01) {
+          samePo.REMARK = row.REMARK;
+        }
+      })
     },
     dialogHanderHide() {
       this.isShow = false;
@@ -845,7 +856,7 @@ export default {
         });
     },
     statusChange(row){
-      row.STATUS == "1" ? "0" : "1"
+      row.STATUS = row.STATUS == "1" ? "0" : "1"
     },
 
     // 分页操作
